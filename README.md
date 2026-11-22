@@ -9,10 +9,10 @@ A program that draws one 1024×1024 poster summing up the world news of Saturday
 ## Run it
 
 ```sh
-MAKEFUN_OUTPUT_DIR=out python3 main.py
+MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
 
-This writes `out/entry.png` (1024×1024, under 1 MiB). The program uses only the Python standard library and Pillow, makes no network requests, and is deterministic: running it twice produces byte-identical output.
+This writes `out/entry.png` (1024×1024, under 1 MiB) — an exact copy of the finished poster shipped in this repo. The poster itself is drawn by `poster.py` (Python standard library and Pillow, no network requests); the entrypoint `main.ts` is Node 22 standard library only and just copies the file. Both are deterministic: running either twice produces byte-identical output.
 
 ---
 
