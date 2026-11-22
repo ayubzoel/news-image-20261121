@@ -262,25 +262,25 @@ MAIN = [
 
 # Also today: n, one-line text, pin lon/lat, optional drawn position.
 ALSO = [
-    (16, "EU, Indonesia sign trade deal after 10 years", 4.35, 50.85, (8.0, 53.0)),
+    (16, "EU, Indonesia sign trade deal after 10 years", 4.35, 50.85, (8.0, 60.0)),
     (17, "Prabowo meets Xi; $71.8bn of deals agreed", 116.41, 39.9, None),
     (18, "Jakarta stocks fall 3.71% in a week", 106.85, -6.21, None),
-    (19, "Indonesia closes its COP31 pavilion", 106.85, -6.21, (113.5, -8.5)),
+    (19, "Indonesia closes its COP31 pavilion", 106.85, -6.21, (118.0, -9.0)),
     (20, "Hong Kong Open: four Indonesians in semis", 114.17, 22.32, (121.5, 20.5)),
     (21, "Jensen Huang to testify before US Senate", -77.8, 38.7, (-89.0, 34.5)),
-    (22, "Gen Z walkouts sweep 25 European states", 13.4, 52.52, (21.0, 53.5)),
-    (23, "Denmark backs US-Greenland deal, 109-0", 12.57, 55.68, (15.0, 58.5)),
-    (24, "France enters a sixth week of protests", 2.35, 48.86, (4.5, 44.5)),
+    (22, "Gen Z walkouts sweep 25 European states", 13.4, 52.52, (26.0, 56.0)),
+    (23, "Denmark backs US-Greenland deal, 109-0", 12.57, 55.68, (20.0, 62.0)),
+    (24, "France enters a sixth week of protests", 2.35, 48.86, (1.0, 39.5)),
     (25, "FBI probes hack of its criminal database", -76.2, 39.6, (-67.0, 45.0)),
-    (26, "Mamdani vows to close New York's Rikers", -74.0, 40.71, (-62.0, 39.5)),
-    (27, "Floods swamp 850 homes in France", 4.83, 45.76, (11.0, 42.8)),
+    (26, "Mamdani vows to close New York's Rikers", -74.0, 40.71, (-58.0, 37.0)),
+    (27, "Floods swamp 850 homes in France", 4.83, 45.76, (14.0, 40.0)),
     (28, "Snow strands 1,000+ in Fukushima", 140.47, 37.76, None),
-    (29, "Tainted alcohol kills 11 in Manipur", 93.94, 24.82, None),
+    (29, "Tainted alcohol kills 11 in Manipur", 93.94, 24.82, (100.0, 30.0)),
     (30, "Pakistani man jailed 27 years over Trump plot", 73.07, 33.68, (68.0, 36.0)),
     (31, "Russia uses GTA VI in army recruitment ads", 37.62, 55.76, None),
-    (32, "Harry Kane out for months with injury", 11.58, 48.14, (16.5, 47.5)),
-    (33, "FFI 2026: 'Para Perasuk' wins Best Film", 106.85, -6.21, (100.5, -9.0)),
-    (34, "Honor teases phone with 15,000 mAh battery", 116.41, 39.9, (122.5, 37.0)),
+    (32, "Harry Kane out for months with injury", 11.58, 48.14, (22.0, 47.0)),
+    (33, "FFI 2026: 'Para Perasuk' wins Best Film", 106.85, -6.21, (98.0, -10.0)),
+    (34, "Honor teases phone with 15,000 mAh battery", 116.41, 39.9, (126.0, 33.0)),
     (35, "Taylor Swift wins a major award in India", 72.88, 19.08, None),
 ]
 
@@ -349,7 +349,7 @@ def build():
     d.text((28, 132), "LEAD STORY  ·  SHENZHEN, CHINA",
            font=font("sans_b", 13), fill=GOLD)
     d.text((28, 156), "THREE LEADERS, ONE TABLE",
-           font=font("serif_b", 36), fill=WHITE)
+           font=font("serif_b", 34), fill=WHITE)
     hero_lines = wrap(
         "Trump, Xi and Putin hold a three-way meeting at the APEC summit "
         "and agree to open talks on reducing nuclear risk.",
@@ -379,20 +379,26 @@ def build():
                     d.rectangle([wx, wy, wx + 3, wy + 4], fill=GOLD_SOFT)
 
     # ---- world map -----------------------------------------------------
-    d.rectangle([MAP_X, MAP_Y, MAP_X + MAP_W, MAP_Y + MAP_H], fill=OCEAN)
+    # Ocean, graticule and land are rendered at 2x on a scratch layer and
+    # downscaled, so coastlines get real anti-aliasing instead of the
+    # jagged 1x polygon edges.
+    ss = 2
+    layer = Image.new("RGB", (MAP_W * ss, MAP_H * ss), OCEAN)
+    ld = ImageDraw.Draw(layer)
+    for lon in range(-180, 181, 30):
+        x = (lon + 180) / 360.0 * MAP_W * ss
+        ld.line([x, 0, x, MAP_H * ss], fill=GRID, width=ss)
+    for lat in range(-60, 79, 20):
+        y = (LAT_TOP - lat) / (LAT_TOP - LAT_BOT) * MAP_H * ss
+        ld.line([0, y, MAP_W * ss, y], fill=GRID, width=ss)
+    for poly in LAND_POLYS:
+        pts = [((lon + 180.0) / 360.0 * MAP_W * ss,
+                (LAT_TOP - lat) / (LAT_TOP - LAT_BOT) * MAP_H * ss)
+               for lon, lat in poly]
+        ld.polygon(pts, fill=LAND, outline=LAND_EDGE)
+    img.paste(layer.resize((MAP_W, MAP_H), Image.LANCZOS), (MAP_X, MAP_Y))
     d.rectangle([MAP_X, MAP_Y, MAP_X + MAP_W, MAP_Y + MAP_H],
                 outline=INK, width=2)
-    # graticule
-    for lon in range(-180, 181, 30):
-        x = MAP_X + (lon + 180) / 360.0 * MAP_W
-        d.line([x, MAP_Y, x, MAP_Y + MAP_H], fill=GRID, width=1)
-    for lat in range(-60, 79, 20):
-        y = MAP_Y + (LAT_TOP - lat) / (LAT_TOP - LAT_BOT) * MAP_H
-        d.line([MAP_X, y, MAP_X + MAP_W, y], fill=GRID, width=1)
-    # land
-    for poly in LAND_POLYS:
-        pts = [project(lon, lat) for lon, lat in poly]
-        d.polygon(pts, fill=LAND, outline=LAND_EDGE)
     # leaders first (under the pins)
     pins = []
     for n, _h, _s, lon, lat, draw_at in MAIN:
@@ -466,7 +472,7 @@ def build():
     col_x = [28, 352, 676]
     for ci, items in enumerate(cols):
         for i, (n, text, _lon, _lat, _da) in enumerate(items):
-            y = 922 + i * 14
+            y = 920 + i * 12
             d.text((col_x[ci], y), "%d." % n, font=font("sans_b", 11), fill=RED)
             d.text((col_x[ci] + 24, y), text, font=font("sans", 11), fill=INK)
             if text_w(d, text, font("sans", 11)) > 286:
